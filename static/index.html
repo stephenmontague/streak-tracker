@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streak Tracker - Temporal Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 600px; width: 100%; }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.25rem;
+      color: #f8fafc;
+    }
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #334155;
+    }
+    .card h2 {
+      font-size: 1rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    .card.demo-active {
+      border-color: #f97316;
+      box-shadow: 0 0 0 1px #f97316;
+    }
+    .streak-display {
+      text-align: center;
+      padding: 1rem 0;
+    }
+    .streak-number {
+      font-size: 4rem;
+      font-weight: 800;
+      color: #f97316;
+      line-height: 1;
+    }
+    .streak-label {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .stat { text-align: center; }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-yes { background: #166534; color: #4ade80; }
+    .badge-no { background: #7f1d1d; color: #fca5a5; }
+    .user-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    input, select {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #f97316; }
+    input { flex: 1; }
+    button {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #f97316; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #ea580c; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-secondary:hover:not(:disabled) { background: #475569; }
+    .btn-toggle {
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+    }
+    .btn-toggle.active { background: #f97316; color: #fff; }
+    .btn-toggle:not(.active) { background: #334155; color: #94a3b8; }
+    .tz-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .tz-row select { flex: 1; }
+    .tz-info {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.75rem;
+    }
+    .tz-info strong { color: #e2e8f0; }
+    .log {
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+    .log-entry { color: #64748b; }
+    .log-entry .time { color: #475569; }
+    .log-entry.success { color: #4ade80; }
+    .log-entry.info { color: #60a5fa; }
+    .log-entry.warning { color: #fbbf24; }
+    .log-entry.error { color: #f87171; }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #475569;
+    }
+    .powered-by {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+    .powered-by a { color: #64748b; text-decoration: none; }
+    .detected-tz {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+    }
+    /* Demo mode styles */
+    .demo-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .demo-row select {
+      width: 80px;
+    }
+    .demo-note {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 0.75rem;
+    }
+    .countdown-container {
+      margin-top: 1rem;
+    }
+    .countdown-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.4rem;
+    }
+    .countdown-header strong { color: #e2e8f0; }
+    .progress-bar {
+      height: 8px;
+      background: #0f172a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #f97316;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Streak Tracker</h1>
+    <p class="subtitle">Temporal durable workflows with exact-hour timezone grace</p>
+
+    <!-- User ID -->
+    <div class="card">
+      <h2>User</h2>
+      <div class="user-input">
+        <input type="text" id="userId" placeholder="Enter user ID" value="demo-user" />
+        <button class="btn-secondary" onclick="loadStreak()">Load</button>
+      </div>
+    </div>
+
+    <!-- Demo Controls -->
+    <div class="card" id="demoCard">
+      <h2>Demo Controls</h2>
+      <div class="demo-row">
+        <button class="btn-toggle" id="demoToggle" onclick="toggleDemoMode()">Demo Mode: OFF</button>
+        <span style="color: #64748b; font-size: 0.85rem;">Day length:</span>
+        <select id="dayDuration">
+          <option value="15">15s</option>
+          <option value="30" selected>30s</option>
+          <option value="60">60s</option>
+        </select>
+      </div>
+      <div id="countdownContainer" class="countdown-container hidden">
+        <div class="countdown-header">
+          <span>Day <strong id="currentDayNum">0</strong></span>
+          <span>Next day in: <strong id="countdownText">-</strong></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="demo-note">
+        In demo mode, each "day" lasts a few seconds. Record once per day to maintain your streak.
+        A new workflow is created for demo mode.
+      </div>
+    </div>
+
+    <!-- Streak Display -->
+    <div class="card">
+      <h2>Current Streak</h2>
+      <div class="streak-display">
+        <div class="streak-number" id="streakCount">-</div>
+        <div class="streak-label">consecutive days</div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="longestStreak">-</div>
+          <div class="stat-label">Longest</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="totalDays">-</div>
+          <div class="stat-label">Total Days</div>
+        </div>
+        <div class="stat">
+          <div id="recordedBadge" class="badge badge-no">Not Yet</div>
+          <div class="stat-label" style="margin-top: 0.25rem;">Today</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record Activity -->
+    <div class="card">
+      <h2>Record Activity</h2>
+      <button class="btn-primary" style="width: 100%;" onclick="recordActivity()" id="recordBtn">
+        Record Today's Activity
+      </button>
+      <div class="detected-tz">Your browser timezone: <strong id="detectedTz">-</strong></div>
+    </div>
+
+    <!-- Timezone -->
+    <div class="card">
+      <h2>Simulate Travel</h2>
+      <div class="tz-info">
+        Anchor: <strong id="anchorTz">-</strong> |
+        Current: <strong id="currentTz">-</strong>
+      </div>
+      <div class="tz-row">
+        <select id="tzSelect">
+          <option value="America/New_York">America/New_York (EST/EDT)</option>
+          <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+          <option value="America/Denver">America/Denver (MST/MDT)</option>
+          <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+          <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+          <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+          <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+          <option value="Europe/London">Europe/London (GMT/BST)</option>
+          <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+          <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+          <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+          <option value="Pacific/Auckland">Pacific/Auckland (NZST/NZDT)</option>
+          <option value="Pacific/Honolulu">Pacific/Honolulu (HST)</option>
+          <option value="UTC">UTC</option>
+        </select>
+        <button class="btn-secondary" onclick="simulateTravel()" id="tzBtn">Simulate</button>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="card">
+      <h2>Event Log</h2>
+      <div class="log" id="log">
+        <div class="empty-state">Events will appear here...</div>
+      </div>
+    </div>
+
+    <div class="powered-by">
+      Built with <a href="https://temporal.io" target="_blank">Temporal</a> durable workflows
+    </div>
+  </div>
+
+  <script>
+    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    let pollInterval = null;
+    let hasWorkflow = false;
+    let simulatedTz = null;
+    let demoMode = false;
+    let lastState = null;
+
+    document.getElementById('detectedTz').textContent = browserTz;
+
+    const tzSelect = document.getElementById('tzSelect');
+    if (tzSelect.querySelector(`option[value="${browserTz}"]`)) {
+      tzSelect.value = browserTz;
+    }
+
+    function getUserId() {
+      const base = document.getElementById('userId').value.trim();
+      return demoMode ? base + '-demo' : base;
+    }
+
+    function getEffectiveTz() {
+      return simulatedTz || browserTz;
+    }
+
+    function logEvent(message, type = 'info') {
+      const log = document.getElementById('log');
+      if (log.querySelector('.empty-state')) {
+        log.innerHTML = '';
+      }
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.innerHTML = `<span class="time">${time}</span> ${message}`;
+      log.prepend(entry);
+    }
+
+    function toggleDemoMode() {
+      demoMode = !demoMode;
+      const btn = document.getElementById('demoToggle');
+      const card = document.getElementById('demoCard');
+      const countdown = document.getElementById('countdownContainer');
+
+      if (demoMode) {
+        btn.textContent = 'Demo Mode: ON';
+        btn.classList.add('active');
+        card.classList.add('demo-active');
+        countdown.classList.remove('hidden');
+        logEvent('Demo mode ON. A new workflow will be created. Record to start!', 'warning');
+      } else {
+        btn.textContent = 'Demo Mode: OFF';
+        btn.classList.remove('active');
+        card.classList.remove('demo-active');
+        countdown.classList.add('hidden');
+        logEvent('Demo mode OFF. Using real calendar days.', 'info');
+      }
+
+      // Reset state for the new mode
+      hasWorkflow = false;
+      simulatedTz = null;
+      updateDisplay(null);
+      stopPolling();
+      loadStreak();
+    }
+
+    async function recordActivity() {
+      const userId = getUserId();
+      if (!userId) { logEvent('Please enter a user ID', 'warning'); return; }
+
+      const btn = document.getElementById('recordBtn');
+      btn.disabled = true;
+      btn.textContent = 'Recording...';
+
+      const tz = getEffectiveTz();
+      const body = { userId, timezone: tz };
+      if (demoMode && !hasWorkflow) {
+        body.dayDuration = parseInt(document.getElementById('dayDuration').value);
+      }
+
+      try {
+        const res = await fetch('/api/record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const modeLabel = demoMode ? ' (demo mode)' : '';
+        logEvent(`Activity recorded from ${tz}${modeLabel}. Workflow signaled.`, 'success');
+        hasWorkflow = true;
+        startPolling();
+        setTimeout(loadStreak, 300);
+      } catch (err) {
+        logEvent(`Failed to record: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Record Today's Activity";
+      }
+    }
+
+    async function loadStreak() {
+      const userId = getUserId();
+      if (!userId) return;
+
+      try {
+        const res = await fetch(`/api/streak?userId=${encodeURIComponent(userId)}`);
+        if (!res.ok) {
+          hasWorkflow = false;
+          updateDisplay(null);
+          return;
+        }
+        const state = await res.json();
+        hasWorkflow = true;
+        lastState = state;
+        updateDisplay(state);
+      } catch {
+        updateDisplay(null);
+      }
+    }
+
+    function updateDisplay(state) {
+      if (!state) {
+        document.getElementById('streakCount').textContent = '-';
+        document.getElementById('longestStreak').textContent = '-';
+        document.getElementById('totalDays').textContent = '-';
+        document.getElementById('anchorTz').textContent = '-';
+        document.getElementById('currentTz').textContent = '-';
+        document.getElementById('currentDayNum').textContent = '0';
+        document.getElementById('countdownText').textContent = '-';
+        document.getElementById('progressFill').style.width = '0%';
+        const badge = document.getElementById('recordedBadge');
+        badge.className = 'badge badge-no';
+        badge.textContent = 'Not Yet';
+        return;
+      }
+
+      document.getElementById('streakCount').textContent = state.currentStreak;
+      document.getElementById('longestStreak').textContent = state.longestStreak;
+      document.getElementById('totalDays').textContent = state.totalDays;
+      document.getElementById('anchorTz').textContent = state.anchorTimezone || '-';
+      document.getElementById('currentTz').textContent = state.timezone || '-';
+
+      const badge = document.getElementById('recordedBadge');
+      if (state.recordedToday) {
+        badge.className = 'badge badge-yes';
+        badge.textContent = 'Done';
+      } else {
+        badge.className = 'badge badge-no';
+        badge.textContent = 'Not Yet';
+      }
+
+      // Demo mode countdown
+      if (state.dayDurationSeconds > 0) {
+        document.getElementById('currentDayNum').textContent = state.currentDay;
+        const remaining = state.secondsUntilMidnight;
+        document.getElementById('countdownText').textContent = remaining + 's';
+        const pct = Math.max(0, Math.min(100, (1 - remaining / state.dayDurationSeconds) * 100));
+        document.getElementById('progressFill').style.width = pct + '%';
+      }
+    }
+
+    async function simulateTravel() {
+      const userId = getUserId();
+      if (!userId) { logEvent('Please enter a user ID', 'warning'); return; }
+      if (!hasWorkflow) { logEvent('Record activity first to start a streak', 'warning'); return; }
+
+      const newTz = document.getElementById('tzSelect').value;
+      const btn = document.getElementById('tzBtn');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/timezone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, newTimezone: newTz }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        simulatedTz = newTz;
+        logEvent(`Simulated travel to ${newTz}. Midnight timer recalculated.`, 'success');
+        logEvent(`Next record will use ${newTz} for grace calculation.`, 'info');
+        setTimeout(loadStreak, 300);
+      } catch (err) {
+        logEvent(`Failed to simulate travel: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function startPolling() {
+      stopPolling();
+      const interval = demoMode ? 1000 : 3000;
+      pollInterval = setInterval(loadStreak, interval);
+    }
+
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    // Initial load
+    loadStreak();
+    logEvent(`Browser timezone detected: ${browserTz}`, 'info');
+    logEvent('Record activity to start your streak!', 'info');
+  </script>
+</body>
+</html>
